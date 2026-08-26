@@ -176,7 +176,7 @@
                 if(!window.confirm(`Sahkan draf FY${nextYear} dan pindahkan sistem aktif ke ${nextYear}?`)) return;
 
                 const updatedBudgets = budgets.map(b => {
-                    if (parseInt(b.year) === nextYear) return { ...b, status: 'Approved' };
+                    if (parseInt(b.year) === nextYear) return { ...b, status: 'Approved', Status: 'Approved' };
                     return b;
                 });
                 
@@ -187,7 +187,11 @@
                 setActiveTab('dashboard');
             };
 
-            const activeBudgets = budgets.filter(b => parseInt(b.year) === fy && (filterDept === 'All' || b.dept === filterDept) && b.status === 'Approved');
+            const activeBudgets = budgets.filter(b => {
+                // Membuat filter kebal huruf besar/kecil (Status / status / APPROVED / Approved)
+                const bStatus = b.status || b.Status || "";
+                return parseInt(b.year) === fy && (filterDept === 'All' || b.dept === filterDept) && bStatus.toLowerCase() === 'approved';
+            });
             const activeTxns = txns.filter(t => parseInt(t.year) === fy && (filterDept === 'All' || t.dept === filterDept));
 
             let mTotalBudget = 0, mTotalSupp = 0, mTotalUsage = 0;
@@ -471,7 +475,7 @@
                                                 <td className="px-6 py-5"><div className="font-bold">{d.code} - {d.dept}</div><div className="text-xs text-slate-500">{d.name}</div></td>
                                                 <td className="px-6 py-5 text-right">{formatRp(currAmt)}</td>
                                                 <td className="px-6 py-5 text-right bg-blue-50/30"><div className="font-black text-lg">{formatRp(dAmt)}</div>{currAmt > 0 && (<div className={`text-[11px] font-bold ${diff > 0 ? 'text-red-500' : 'text-emerald-500'}`}>{diff > 0 ? '+' : ''}{pct.toFixed(1)}% vs FY{fy}</div>)}</td>
-                                                <td className="px-6 py-5 text-center"><span className="px-3 py-1 bg-slate-100 text-[10px] font-bold uppercase rounded">{d.status}</span></td>
+                                                <td className="px-6 py-5 text-center"><span className="px-3 py-1 bg-slate-100 text-[10px] font-bold uppercase rounded">{d.status || d.Status}</span></td>
                                             </tr>
                                         )
                                     })}
