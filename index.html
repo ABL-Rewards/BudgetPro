@@ -3,364 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BudgetPro - Enterprise System</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- React & ReactDOM -->
+    <title>BudgetPro - Enterprise</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel untuk JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Recharts (Untuk Grafik) -->
-    <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-    <script src="https://unpkg.com/react-is@18.2.0/umd/react-is.production.min.js"></script>
-    <script src="https://unpkg.com/recharts@2.1.9/umd/Recharts.min.js"></script>
-
-    <!-- Fix for Lucide-React UMD bug -->
-    <script>window.react = window.React;</script>
-    <script src="https://unpkg.com/lucide-react@0.260.0/dist/umd/lucide-react.min.js"></script>
-
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.7.2/prop-types.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.1.9/Recharts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; margin: 0; overflow: hidden; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        .toast-enter { animation: toastSlide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes toastSlide { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div id="root"></div>
-
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-        
-        // Ikon Fallback & Loaders
-        const FallbackIcon = () => <span className="w-4 h-4 rounded-full bg-slate-300 inline-block animate-pulse"></span>;
-        const SafeLucide = window.lucide || window.LucideReact || {};
-        const getIcon = (name) => SafeLucide[name] || FallbackIcon;
-        
-        const LayoutDashboard = getIcon('LayoutDashboard'); const FileText = getIcon('FileText');
-        const CalendarDays = getIcon('CalendarDays'); const BarChart3 = getIcon('BarChart3');
-        const Settings = getIcon('Settings'); const LogOut = getIcon('LogOut'); const LogIn = getIcon('LogIn');
-        const Wallet = getIcon('Wallet'); const TrendingDown = getIcon('TrendingDown');
-        const Clock = getIcon('Clock'); const Search = getIcon('Search');
-        const Plus = getIcon('Plus'); const AlertCircle = getIcon('AlertCircle'); 
-        const CheckCircle2 = getIcon('CheckCircle2'); const Bell = getIcon('Bell');
-        const History = getIcon('History'); const Edit3 = getIcon('Edit3'); 
-        const ArrowDown = getIcon('ArrowDown'); const ArrowUp = getIcon('ArrowUp'); 
-        const UserCircle = getIcon('UserCircle'); const X = getIcon('X'); const Activity = getIcon('Activity');
-
-        // Recharts Components
-        const SafeRecharts = window.Recharts || {};
-        const BarChart = SafeRecharts.BarChart || 'div'; const Bar = SafeRecharts.Bar || 'div';
-        const XAxis = SafeRecharts.XAxis || 'div'; const YAxis = SafeRecharts.YAxis || 'div';
-        const CartesianGrid = SafeRecharts.CartesianGrid || 'div'; const RechartsTooltip = SafeRecharts.Tooltip || 'div';
-        const ResponsiveContainer = SafeRecharts.ResponsiveContainer || 'div'; const Cell = SafeRecharts.Cell || 'div';
-
-        // =========================================================================
-        // URL SCRIPT WAJIB DIISI DI SINI KARENA HTML BERADA DI GITHUB
-        // =========================================================================
+        // JIKA PAKAI GITHUB: Taruh URL Web App Anda di sini
+        // JIKA PAKAI LINK APPS SCRIPT LANGSUNG: Biarkan saja, sistem akan otomatis membaca datanya.
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRnhMy0qQpCLrs9EQbyRgwZiyqPjGZSNbpX7cWKaSfYRbJutFfDywcDUL1WBLV72foLw/exec'; 
 
-        const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num || 0);
-        const formatB = (num) => {
-            if (num >= 1000000000) return (num / 1000000000).toFixed(1) + ' M';
-            if (num >= 1000000) return (num / 1000000).toFixed(0) + ' Jt';
-            return num.toString();
-        };
-        const parseRp = (str) => {
-            if (typeof str === 'number') return str;
-            if (!str) return 0;
-            const cleanStr = String(str).replace(/\./g, '').replace(',', '.');
-            return parseFloat(cleanStr) || 0;
-        };
-        
-        const DEPARTMENTS = ['Finance', 'HR', 'IT', 'Operations', 'Marketing', 'Sales', 'Procurement', 'HSE', 'Fleet', 'Offshore', 'General Support (GS)', 'Comben', 'L&D', 'TA', 'CB', 'OD', 'CSR', 'IR'];
+        const { useState, useEffect } = React;
+        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip: RechartsTooltip, ResponsiveContainer, Cell, Legend } = window.Recharts;
 
-        function App() {
-            const [users, setUsers] = useState([]);
-            const [budgets, setBudgets] = useState([]);
-            const [txns, setTxns] = useState([]);
-            const [logs, setLogs] = useState([]);
-            
+        class ContentErrorBoundary extends React.Component {
+            constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            componentDidUpdate(prevProps) { if (this.props.activeTab !== prevProps.activeTab) this.setState({ hasError: false, error: null }); }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="p-8 bg-red-50 border border-red-200 rounded-xl m-8">
+                            <h2 className="text-lg font-bold text-red-600 mb-2">⚠️ Error Executing Component</h2>
+                            <pre className="text-xs bg-slate-900 text-green-400 p-4 rounded overflow-auto max-h-64 whitespace-pre-wrap">{this.state.error ? this.state.error.toString() : 'Unknown Error'}</pre>
+                            <button onClick={() => window.location.reload()} className="mt-4 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-bold">Reload Application</button>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
+        const App = () => {
             const [isLoading, setIsLoading] = useState(true);
+            const [isSyncing, setIsSyncing] = useState(false); 
+            const [data, setData] = useState({ users: [], departments: [], companies: [], budgets: [], transactions: [], rates: {}, logoUrl: '' });
             const [user, setUser] = useState(null);
-            const [showLoginModal, setShowLoginModal] = useState(false);
+            
+            const [loginInput, setLoginInput] = useState({ user: '', pass: '' });
+            const [loginError, setLoginError] = useState('');
             const [activeTab, setActiveTab] = useState('dashboard');
             
-            const [fy, setFy] = useState(2026);
-            const [filterDept, setFilterDept] = useState('All');
+            const [currency, setCurrency] = useState('IDR');
+            const [subDept, setSubDept] = useState('');
+            const [activeCompany, setActiveCompany] = useState('All');
+            const [activeYear, setActiveYear] = useState('2026');
+            const [toast, setToast] = useState(null);
+
+            const [filterBudgetGL, setFilterBudgetGL] = useState('ALL');
+            const [filterBudgetComp, setFilterBudgetComp] = useState('ALL');
+            const [searchBudgetDesc, setSearchBudgetDesc] = useState('');
             
-            const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-            const [usageForm, setUsageForm] = useState({ date: new Date().toISOString().split('T')[0], dept: '', code: '', amount: '', desc: '' });
+            const [filterUsageGL, setFilterUsageGL] = useState('ALL');
+            const [filterUsageComp, setFilterUsageComp] = useState('ALL');
+            const [searchUsageDesc, setSearchUsageDesc] = useState('');
+            
+            const [searchSuppDesc, setSearchSuppDesc] = useState('');
+            
+            const [usageForm, setUsageForm] = useState({ date:'', company:'', dept:'', gl:'', amount:'', desc:'' });
+            const [suppForm, setSuppForm] = useState({ date:'', company:'', dept:'', gl:'', amount:'', desc:'' });
+            const [adminForm, setAdminForm] = useState({ type:'Company', value:'' });
+            const [userForm, setUserForm] = useState({ username:'', password:'', name:'', role:'User', dept:'', comp:'', email:'' });
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            
+            const [detailModal, setDetailModal] = useState(null);
+            const [editingDraft, setEditingDraft] = useState(null); 
+            const [draftInput, setDraftInput] = useState('');
+            const [reportCompany, setReportCompany] = useState('All');
 
-            // 1. MENGAMBIL DATA MENGGUNAKAN FETCH (API CALL)
-            useEffect(() => {
-                const loadData = async () => {
-                    setIsLoading(true);
-                    try {
-                        if(GOOGLE_SCRIPT_URL === 'PASTE_URL_APPS_SCRIPT_ANDA_DI_SINI') {
-                            alert("PENTING: Anda belum memasukkan URL Google Script di baris ke-54 kode HTML!");
-                            setIsLoading(false);
-                            return;
-                        }
-
-                        const response = await fetch(GOOGLE_SCRIPT_URL);
-                        const data = await response.json();
-                        
-                        if(data.users) setUsers(data.users);
-                        if(data.budgets) setBudgets(data.budgets);
-                        if(data.txns) setTxns(data.txns);
-                        if(data.logs) setLogs(data.logs);
-                    } catch (error) {
-                        console.error("Fetch Error:", error);
-                        alert("Gagal terhubung ke Google Sheets. Pastikan URL sudah benar dan akses di-set ke 'Anyone'.");
-                    } finally {
-                        setIsLoading(false);
-                    }
-                };
-                loadData();
-            }, []);
-
-            useEffect(() => {
-                if (user && user.department !== 'All') setFilterDept(user.department);
-            }, [user]);
-
-            // 2. MENGIRIM DATA MENGGUNAKAN FETCH POST
-            const postToSheets = (actionType, payload) => {
-                // Gunakan mode 'no-cors' dan header 'text/plain' agar tidak diblokir sistem keamanan browser (CORS) saat ditaruh di GitHub
-                fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ actionType, payload })
-                }).catch(err => console.error("Error POST:", err));
+            // API GITHUB (Jika dipakai di luar Google)
+            const apiCall = async (action, payload = {}) => {
+                const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, data: payload }) });
+                return await res.json();
             };
 
-            const addLog = (action, details, uName = user?.name) => {
-                const newLog = { id: Date.now(), time: new Date().toISOString(), user: uName || 'Unknown', action, details };
-                setLogs(prev => [newLog, ...prev]);
-                postToSheets('ADD_LOG', newLog);
-            };
+            const fetchData = (isBackground = false) => {
+                if (!isBackground) setIsLoading(true); else setIsSyncing(true);
 
-            const handleLogin = (e) => {
-                e.preventDefault();
-                const foundUser = users.find(u => u.username === loginForm.username && String(u.password) === String(loginForm.password));
-                if (foundUser) {
-                    setUser(foundUser);
-                    setShowLoginModal(false);
-                    setLoginForm({username: '', password: ''});
-                    addLog('LOGIN', 'User logged into the system', foundUser.name);
-                } else {
-                    alert("Username atau Password salah! (Cek sheet 'Users' di Google Sheets)");
+                // LOGIKA 1: JIKA DIBUKA DI APPS SCRIPT LANGSUNG (Paling Lancar)
+                if (typeof google !== 'undefined' && google.script) {
+                    google.script.run
+                        .withSuccessHandler((res) => {
+                            if(res.error) { if(!isBackground) setLoginError(res.error); else showToast(res.error, 'error'); } 
+                            else { setData({ users: res.users||[], departments: res.departments||[], companies: res.companies||[], budgets: res.budgets||[], transactions: res.transactions||[], rates: res.rates||{}, logoUrl: res.logoUrl||'' }); if (!isBackground) setLoginError(''); }
+                            setIsLoading(false); setIsSyncing(false);
+                        })
+                        .withFailureHandler((err) => { if (!isBackground) setLoginError(err.toString()); setIsLoading(false); setIsSyncing(false); })
+                        .getAppData();
+                } 
+                // LOGIKA 2: JIKA DIBUKA DI GITHUB (Maka Pakai URL)
+                else if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                    apiCall('getAppData').then((res) => {
+                        if(res.error) { if(!isBackground) setLoginError(res.error); else showToast(res.error, 'error'); } 
+                        else { setData({ users: res.users||[], departments: res.departments||[], companies: res.companies||[], budgets: res.budgets||[], transactions: res.transactions||[], rates: res.rates||{}, logoUrl: res.logoUrl||'' }); if (!isBackground) setLoginError(''); }
+                        setIsLoading(false); setIsSyncing(false);
+                    }).catch((err) => { if (!isBackground) setLoginError(err.toString()); setIsLoading(false); setIsSyncing(false); });
+                } 
+                // LOGIKA 3: DEMO MODE JIKA DI PREVIEW
+                else {
+                    if (!isBackground) setLoginError("✅ Demo Mode Aktif. Login -> User: admin | Pass: 123"); 
+                    setTimeout(() => {
+                        setData({
+                            rates: { "2026": 16500, "2027": 18000 },
+                            logoUrl: "https://i.ibb.co.com/d4J7SpwB/logo-tranparant-BP-tulisan.png",
+                            users: [{ id: '1', username: 'admin', password: '123', name: 'Admin Demo', role: 'Super Admin', department: 'All', company: 'All' }],
+                            departments: ['HCGS', 'Finance'], companies: ['ABL', 'DCA'],
+                            budgets: [
+                                { id: 'b1', year: '2026', company: 'ABL', department: 'HCGS', gl_code: '5200', gl_name: 'Training', amount_idr: 150000000, amount_usd: 10000, status: 'Approved', description: 'Pelatihan Tahunan' }
+                            ],
+                            transactions: [
+                                { id: 't1', date: '2026-03-10', year: '2026', company: 'ABL', department: 'HCGS', gl_code: '5200', gl_name: 'Training', type: 'usage_manual', amount_idr: 25000000, amount_usd: 1600, description: 'Leadership Training', by: 'Admin Demo' }
+                            ]
+                        });
+                        setIsLoading(false); setIsSyncing(false);
+                    }, 600);
                 }
             };
 
-            const handleLogout = () => {
-                addLog('LOGOUT', 'User logged out');
-                setUser(null);
-                setFilterDept('All');
+            useEffect(() => { fetchData(false); }, []);
+
+            const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 4000); };
+            const safeNum = (val) => parseFloat(val) || 0;
+            const formatUang = (num) => new Intl.NumberFormat(currency === 'IDR' ? 'id-ID' : 'en-US', { style: 'currency', currency: currency, maximumFractionDigits: 0 }).format(safeNum(num));
+            const formatShort = (num) => { const n = safeNum(num); if (Math.abs(n) >= 1000000000) return (n / 1000000000).toFixed(1) + 'B'; if (Math.abs(n) >= 1000000) return (n / 1000000).toFixed(1) + 'M'; return n.toString(); };
+
+            const downloadCSV = (dataList, filename) => {
+                if(!dataList || dataList.length === 0) return showToast("No data to download", "error");
+                const headers = Object.keys(dataList[0]).join(",");
+                const rows = dataList.map(row => Object.values(row).map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+                const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri); link.setAttribute("download", `${filename}.csv`);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
             };
 
-            const handleRollover = () => {
-                if (!user) return alert("Harap login untuk melakukan rollover.");
-                const nextYear = fy + 1;
-                if(!window.confirm(`Sahkan draf FY${nextYear} dan pindahkan sistem aktif ke ${nextYear}?`)) return;
+            if (isLoading) return <div className="flex flex-col h-screen w-full items-center justify-center bg-slate-50"><div className="loader mb-4"></div><p className="text-sm font-bold text-blue-600 uppercase">Syncing Database...</p></div>;
+            
+            if (!user) {
+                const handleLogin = (e) => {
+                    e.preventDefault();
+                    const matchedUser = data.users.find(u => String(u.username) === String(loginInput.user) && String(u.password) === String(loginInput.pass));
+                    if (matchedUser) {
+                        setUser(matchedUser);
+                        let uDept = matchedUser.department;
+                        const canChangeDept = !uDept || uDept === 'All' || uDept === 'All Area HCGS';
+                        if (canChangeDept) { setSubDept('All Area HCGS'); setSuppForm(p => ({...p, dept: ''})); setUsageForm(p => ({...p, dept: ''})); } 
+                        else { setSubDept(uDept); setSuppForm(p => ({...p, dept: uDept})); setUsageForm(p => ({...p, dept: uDept})); }
 
-                const updatedBudgets = budgets.map(b => {
-                    if (parseInt(b.year) === nextYear) return { ...b, status: 'Approved', Status: 'Approved' };
-                    return b;
-                });
-                
-                setBudgets(updatedBudgets);
-                setFy(nextYear);
-                addLog('SYSTEM_ROLLOVER', `Migrasi sistem disahkan ke FY${nextYear}`);
-                postToSheets('ROLLOVER', { nextYear: nextYear });
-                setActiveTab('dashboard');
-            };
-
-            const activeBudgets = budgets.filter(b => {
-                // Membuat filter kebal huruf besar/kecil (Status / status / APPROVED / Approved)
-                const bStatus = b.status || b.Status || "";
-                return parseInt(b.year) === fy && (filterDept === 'All' || b.dept === filterDept) && bStatus.toLowerCase() === 'approved';
-            });
-            const activeTxns = txns.filter(t => parseInt(t.year) === fy && (filterDept === 'All' || t.dept === filterDept));
-
-            let mTotalBudget = 0, mTotalSupp = 0, mTotalUsage = 0;
-            activeBudgets.forEach(b => mTotalBudget += parseRp(b.amount));
-            activeTxns.forEach(t => {
-                const amt = parseRp(t.amount);
-                if (t.type === 'usage') mTotalUsage += amt;
-                if (t.type === 'supplement') mTotalSupp += amt;
-            });
-            const mTotalAvailable = mTotalBudget + mTotalSupp;
-            const mRemaining = mTotalAvailable - mTotalUsage;
-            const mUtilPct = mTotalAvailable ? ((mTotalUsage / mTotalAvailable) * 100) : 0;
-
-            const LoginModal = () => {
-                if (!showLoginModal) return null;
+                        let uComp = matchedUser.company;
+                        const canChangeComp = !uComp || String(uComp).toLowerCase() === 'all' || String(uComp).toLowerCase() === 'all companies';
+                        if (canChangeComp) setActiveCompany('All'); else setActiveCompany(uComp);
+                    } else setLoginError('Invalid Username or Password');
+                };
                 return (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden fade-in">
-                            <div className="bg-[#0f172a] p-6 text-center relative border-b border-slate-800">
-                                <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={20}/></button>
-                                <div className="flex justify-center mb-4"><div className="bg-amber-500 p-2.5 rounded-xl shadow-lg"><UserCircle className="text-white" size={28} /></div></div>
-                                <h2 className="text-xl font-bold text-white">System Login</h2>
-                            </div>
-                            <form onSubmit={handleLogin} className="p-6 space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Username</label>
-                                    <input type="text" value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})} className="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-blue-600" required />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label>
-                                    <input type="password" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-blue-600" required />
-                                </div>
-                                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg mt-2"><LogIn size={18} className="inline mr-2"/> Sign In</button>
+                    <div className="flex h-screen w-full items-center justify-center bg-slate-100 p-4">
+                        <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
+                            <div className="flex justify-center mb-6"><img src={data.logoUrl || "https://i.ibb.co.com/d4J7SpwB/logo-tranparant-BP-tulisan.png"} alt="Logo" className="h-16 object-contain" /></div>
+                            {loginError && <div className="p-3 rounded-lg text-xs mb-6 font-semibold bg-blue-50 text-blue-700 border border-blue-200 text-center">{loginError}</div>}
+                            <form onSubmit={handleLogin} className="space-y-4">
+                                <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Username</label><input type="text" required value={loginInput.user} onChange={e => setLoginInput({...loginInput, user: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm outline-none focus:border-blue-500" /></div>
+                                <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Password</label><input type="password" required value={loginInput.pass} onChange={e => setLoginInput({...loginInput, pass: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm outline-none focus:border-blue-500" /></div>
+                                <button type="submit" className="w-full text-white font-bold py-3 rounded-lg mt-4 shadow-lg bg-blue-600 hover:bg-blue-700">Enter System</button>
                             </form>
                         </div>
                     </div>
                 );
-            };
-
-            if (isLoading) {
-                return (
-                    <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center">
-                        <div className="spinner mb-4"></div>
-                        <h2 className="text-xl font-bold text-white tracking-widest uppercase">BudgetPro API Sync</h2>
-                        <p className="text-slate-400 text-sm mt-2">Menghubungkan Frontend GitHub ke Backend Sheets...</p>
-                    </div>
-                );
             }
 
-            const Sidebar = () => {
-                const navs = [
-                    { id: 'dashboard', label: 'Dashboard Analytics', icon: LayoutDashboard },
-                    { id: 'detail', label: 'Budget Detail', icon: FileText },
-                    { id: 'entry', label: 'Usage Entry', icon: Edit3 },
-                    { id: 'planning', label: 'Next Year Planning', icon: CalendarDays },
-                    { id: 'logs', label: 'Audit Logs', icon: History }
-                ];
-                return (
-                    <aside className="w-64 bg-[#0f172a] text-slate-300 flex flex-col h-screen fixed left-0 top-0 border-r border-slate-800 z-50">
-                        <div className="h-20 flex items-center gap-3 px-6 border-b border-slate-800">
-                            <div className="text-amber-500"><BarChart3 size={28} strokeWidth={2.5}/></div>
-                            <div>
-                                <h1 className="text-xl font-bold text-white">BudgetPro</h1>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase">{user ? user.company : 'Guest View'}</p>
-                            </div>
-                        </div>
-                        <nav className="flex-1 py-6 px-4 space-y-1">
-                            {navs.map(n => {
-                                const active = activeTab === n.id;
-                                return (
-                                    <button key={n.id} onClick={() => setActiveTab(n.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${active ? 'bg-slate-800 text-amber-500' : 'hover:bg-slate-800/50 hover:text-white'}`}>
-                                        <n.icon size={18} className={active ? 'text-amber-500' : 'text-slate-500'} /> {n.label}
-                                    </button>
-                                )
-                            })}
-                        </nav>
-                        <div className="p-4 border-t border-slate-800">
-                            {user ? (
-                                <div>
-                                    <div className="flex items-center gap-3 p-3 mb-2 bg-slate-800/50 rounded-xl">
-                                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">{user.name.charAt(0)}</div>
-                                        <div className="text-left"><div className="text-xs font-bold text-white truncate w-24">{user.name}</div><div className="text-[10px] text-slate-400 truncate">{user.role}</div></div>
-                                    </div>
-                                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-slate-400 hover:text-white"><LogOut size={16} /> Logout</button>
-                                </div>
-                            ) : (
-                                <button onClick={() => setShowLoginModal(true)} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md"><LogIn size={18} className="inline mr-2" /> Admin Login</button>
-                            )}
-                        </div>
-                    </aside>
-                );
-            };
+            const userRoleStr = String(user.role).toLowerCase();
+            const isAdmin = userRoleStr === 'admin' || userRoleStr === 'super admin';
+            const isUserLocked = user.department !== 'All' && user.department !== 'All Area HCGS';
+            const isCompLocked = user.company && String(user.company).toLowerCase() !== 'all' && String(user.company).toLowerCase() !== 'all companies';
 
-            const TopHeader = ({ title, subtitle }) => (
-                <header className="h-24 bg-white border-b border-slate-200 px-8 flex justify-between items-center sticky top-0 z-40">
-                    <div>
-                        <div className="flex items-center gap-3"><h2 className="text-2xl font-bold text-[#0f172a]">{title}</h2>{!user && <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded border">View Only</span>}</div>
-                        <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
-                    </div>
-                    <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
-                        <select value={fy} onChange={e => setFy(parseInt(e.target.value))} className="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer pl-3 py-1">
-                            <option value={2026}>FY 2026</option><option value={2027}>FY 2027</option>
-                        </select>
-                        <div className="w-px h-5 bg-slate-300"></div>
-                        <select value={filterDept} onChange={e => setFilterDept(e.target.value)} disabled={user && user.department !== 'All'} className="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer pr-3 py-1">
-                            <option value="All">All Departments</option>
-                            {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                    </div>
-                </header>
+            const activeBudgets = (data.budgets || []).filter(b => 
+                String(b.year).trim() === String(activeYear).trim() && 
+                String(b.status).trim().toLowerCase() !== 'draft' && 
+                (subDept === 'All Area HCGS' || String(b.department).trim() === subDept) &&
+                (activeCompany === 'All' || String(b.company).trim() === activeCompany)
+            );
+            
+            const activeTxns = (data.transactions || []).filter(t => 
+                String(t.year).trim() === String(activeYear).trim() && 
+                (subDept === 'All Area HCGS' || String(t.department).trim() === subDept) &&
+                (activeCompany === 'All' || String(t.company).trim() === activeCompany)
             );
 
+            let tBudget = 0, tUsage = 0, tSupp = 0;
+            activeBudgets.forEach(b => { tBudget += (currency === 'IDR' ? safeNum(b.amount_idr) : safeNum(b.amount_usd)); });
+            activeTxns.forEach(t => { 
+                const amt = (currency === 'IDR' ? safeNum(t.amount_idr) : safeNum(t.amount_usd));
+                if(String(t.type).toLowerCase() === 'supplement') tSupp += amt;
+                else tUsage += amt; 
+            });
+            const tRevised = tBudget + tSupp;
+            const remaining = tRevised - tUsage;
+            const utilPct = tRevised > 0 ? (tUsage/tRevised)*100 : 0;
+
             const renderDashboard = () => {
-                const kpis = [
-                    { title: 'TOTAL BUDGET', val: formatRp(mTotalBudget), bg: 'bg-blue-50', c: 'text-blue-600', icon: Wallet },
-                    { title: 'SUPPLEMENT BUDGET', val: formatRp(mTotalSupp), bg: 'bg-emerald-50', c: 'text-emerald-600', icon: Plus },
-                    { title: 'TOTAL AVAILABLE', val: formatRp(mTotalAvailable), bg: 'bg-blue-50', c: 'text-blue-600', icon: ArrowDown },
-                    { title: 'ACTUAL USAGE', val: formatRp(mTotalUsage), bg: 'bg-purple-50', c: 'text-purple-600', icon: BarChart3 },
-                    { title: 'REMAINING BUDGET', val: formatRp(mRemaining), bg: 'bg-amber-50', c: 'text-amber-600', icon: Clock }
-                ];
-                
-                const deptMap = {};
-                activeBudgets.forEach(b => { if(!deptMap[b.dept]) deptMap[b.dept] = { name: b.dept, budget: 0, usage: 0 }; deptMap[b.dept].budget += parseRp(b.amount); });
-                activeTxns.forEach(t => {
-                    const amt = parseRp(t.amount);
-                    if(t.type === 'supplement' && deptMap[t.dept]) deptMap[t.dept].budget += amt;
-                    if(t.type === 'usage' && deptMap[t.dept]) deptMap[t.dept].usage += amt;
+                const glSummary = {};
+                activeBudgets.forEach(b => {
+                    const key = `${b.company}-${b.gl_code}`;
+                    if(!glSummary[key]) glSummary[key] = { name: b.gl_name, code: b.gl_code, comp: b.company, initial: 0, supp: 0, usage: 0 };
+                    glSummary[key].initial += (currency === 'IDR' ? safeNum(b.amount_idr) : safeNum(b.amount_usd));
                 });
-                const deptData = Object.values(deptMap).map(d => ({ ...d, pct: d.budget ? Math.round((d.usage/d.budget)*100) : 0 })).sort((a,b) => b.pct - a.pct);
+                activeTxns.forEach(t => {
+                    const key = `${t.company}-${t.gl_code}`;
+                    if(glSummary[key]) {
+                        const amt = (currency === 'IDR' ? safeNum(t.amount_idr) : safeNum(t.amount_usd));
+                        if(String(t.type).toLowerCase() === 'supplement') glSummary[key].supp += amt;
+                        else glSummary[key].usage += amt;
+                    }
+                });
                 
-                const chartData = [
-                    { name: 'Initial', val: mTotalBudget, fill: '#1e3a8a' }, { name: 'Supplement', val: mTotalSupp, fill: '#10b981' },
-                    { name: 'Revised', val: mTotalAvailable, fill: '#3b82f6' }, { name: 'Actual', val: mTotalUsage, fill: '#8b5cf6' },
-                    { name: 'Remaining', val: mRemaining, fill: '#f59e0b' }
-                ];
+                const utilWarnings = Object.values(glSummary).map(g => {
+                    const revised = g.initial + g.supp;
+                    const pct = revised > 0 ? (g.usage / revised) * 100 : 0;
+                    return { ...g, revised, pct };
+                }).filter(g => g.pct >= 75).sort((a,b) => b.pct - a.pct);
 
                 return (
-                    <div className="p-8 space-y-6 fade-in">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                            {kpis.map((k, i) => (
-                                <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200">
-                                    <div className="flex gap-4 items-center mb-4"><div className={`p-3 rounded-xl ${k.bg} ${k.c}`}><k.icon size={22}/></div><div><h4 className="text-[10px] font-bold text-slate-500 uppercase">{k.title}</h4><h2 className="text-lg font-black text-[#0f172a] mt-0.5">{k.val.split(',00')[0].length > 13 ? formatB(parseFloat(k.val.replace(/[^0-9]/g,''))) : k.val.split(',00')[0]}</h2></div></div>
-                                </div>
-                            ))}
+                    <div className="space-y-6 fade-in pb-10">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p className="text-[10px] font-bold text-slate-500 uppercase">Initial Budget</p><h2 className="text-xl font-black text-blue-700 mt-1">{formatUang(tBudget)}</h2></div>
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p className="text-[10px] font-bold text-slate-500 uppercase flex justify-between">Supplementary <span>{tBudget?((tSupp/tBudget)*100).toFixed(1):0}%</span></p><h2 className="text-xl font-black text-emerald-600 mt-1">{(tSupp>0?'+':'')}{formatUang(tSupp)}</h2></div>
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200"><p className="text-[10px] font-bold text-slate-500 uppercase flex justify-between">Actual Usage <span>{utilPct.toFixed(1)}%</span></p><h2 className="text-xl font-black text-purple-700 mt-1">{formatUang(tUsage)}</h2></div>
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-b-4 border-b-amber-500"><p className="text-[10px] font-bold text-slate-500 uppercase">Remaining Available</p><h2 className="text-xl font-black text-amber-500 mt-1">{formatUang(remaining)}</h2></div>
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200 col-span-2 flex flex-col">
-                                <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-[#0f172a]">Budget Variance Analysis</h3></div>
-                                <div className="h-72 w-full relative">
-                                    {mTotalBudget === 0 ? (<div className="absolute inset-0 flex items-center justify-center text-slate-400">Data Kosong</div>) : (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={chartData} margin={{top:20}}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0"/>
-                                                <XAxis dataKey="name" tick={{fontSize: 11}} axisLine={false} tickLine={false} />
-                                                <YAxis tickFormatter={formatB} tick={{fontSize: 11}} axisLine={false} tickLine={false} />
-                                                <RechartsTooltip formatter={(val) => formatRp(val)} />
-                                                <Bar dataKey="val" radius={[4,4,0,0]} barSize={40}>{chartData.map((e, i) => <Cell key={i} fill={e.fill}/>)}</Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    )}
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 col-span-2 h-[400px] flex flex-col">
+                                <h3 className="font-bold text-slate-800 mb-6">Budget Variance Analysis ({currency})</h3>
+                                <div className="flex-1 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={[ { name: 'Initial', val: tBudget, fill: '#1d4ed8' }, { name: 'Supplement', val: tSupp, fill: '#10b981' }, { name: 'Usage', val: tUsage, fill: '#7e22ce' }, { name: 'Remaining', val: remaining, fill: '#f59e0b' } ]}><CartesianGrid strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name" tick={{fontSize: 12}} axisLine={false} tickLine={false}/><YAxis tickFormatter={formatShort} tick={{fontSize: 12}} axisLine={false} tickLine={false} /><RechartsTooltip formatter={(val) => formatUang(val)} /><Bar dataKey="val" radius={[6,6,0,0]} barSize={60}>{['#1d4ed8', '#10b981', '#7e22ce', '#f59e0b'].map((c, i) => <Cell key={i} fill={c}/>)}</Bar></BarChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </div>
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200">
-                                <h3 className="font-bold text-[#0f172a] mb-6">Ranking Dept (Utilization)</h3>
-                                <div className="space-y-5">
-                                    {deptData.slice(0,6).map((d, i) => (
-                                        <div key={i}>
-                                            <div className="flex justify-between items-center mb-1.5"><span className="text-sm font-bold text-slate-700">{i+1}. {d.name}</span><span className="text-sm font-bold">{d.pct}%</span></div>
-                                            <div className="w-full bg-slate-100 rounded-full h-2"><div className={`h-2 rounded-full ${d.pct > 80 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{width: `${Math.min(d.pct, 100)}%`}}></div></div>
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[400px]">
+                                <h3 className="font-bold text-slate-800 mb-4 flex items-center justify-between">Early Warning System <span className="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full">&gt;75% Utilized</span></h3>
+                                <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                                    {utilWarnings.length === 0 ? <p className="text-xs text-slate-400">All budgets safe (&lt;75%).</p> : utilWarnings.map((w, i) => (
+                                        <div key={i} className="border-b border-slate-100 pb-3">
+                                            <div className="flex justify-between text-xs font-bold mb-1"><span className="text-slate-800 truncate max-w-[150px]" title={w.name}>[{w.comp}] {w.name}</span><span className="text-red-600">{w.pct.toFixed(1)}%</span></div>
+                                            <div className="w-full bg-slate-100 h-1.5 rounded-full mb-1"><div className="h-1.5 rounded-full bg-red-500" style={{width: `${Math.min(w.pct, 100)}%`}}></div></div>
+                                            <div className="flex justify-between text-[10px] text-slate-500"><span>Rem: {formatUang(w.revised - w.usage)}</span><button onClick={()=>setActiveTab('supplement')} className="text-blue-600 font-bold hover:underline">Needs Supp!</button></div>
                                         </div>
                                     ))}
                                 </div>
@@ -370,114 +274,83 @@
                 );
             };
 
-            const renderBudgetDetail = () => {
-                const glData = [];
+            const renderBudgetTable = () => {
+                const aggData = {};
                 activeBudgets.forEach(b => {
-                    const amt = parseRp(b.amount);
-                    let supp = 0, usg = 0;
-                    activeTxns.forEach(t => { if(t.code === b.code && t.dept === b.dept) { if(t.type === 'supplement') supp += parseRp(t.amount); if(t.type === 'usage') usg += parseRp(t.amount); }});
-                    const revised = amt + supp; const rem = revised - usg; const pct = revised ? Math.round((usg/revised)*100) : 0;
-                    glData.push({ dept: b.dept, code: b.code, name: b.name, approved: amt, supp: supp, revised: revised, usage: usg, rem: rem, pct: pct });
+                    const desc = b.description ? String(b.description).trim() : '-';
+                    const key = `${b.company}-${b.department}-${b.gl_code}-${desc.toLowerCase()}`;
+                    if(!aggData[key]) aggData[key] = { ...b, description: desc, initial:0, supp:0, usage:0, all_desc: new Set(), all_names: new Set() };
+                    aggData[key].initial += (currency === 'IDR' ? safeNum(b.amount_idr) : safeNum(b.amount_usd));
+                    if(b.description && String(b.description).trim() !== '-' && String(b.description).trim() !== '') aggData[key].all_desc.add(String(b.description).trim());
+                    if(b.gl_name && String(b.gl_name).trim() !== '-' && String(b.gl_name).trim() !== '') aggData[key].all_names.add(String(b.gl_name).trim());
+                });
+                
+                activeTxns.forEach(t => {
+                    const desc = t.description ? String(t.description).trim() : '-';
+                    const key = `${t.company}-${t.department}-${t.gl_code}-${desc.toLowerCase()}`;
+                    if(!aggData[key]) aggData[key] = { company: t.company, department: t.department, gl_code: t.gl_code, gl_name: t.gl_name, description: desc, initial: 0, supp: 0, usage: 0, all_desc: new Set([desc]), all_names: new Set([t.gl_name]) };
+                    const amt = (currency === 'IDR' ? safeNum(t.amount_idr) : safeNum(t.amount_usd));
+                    if(String(t.type).toLowerCase() === 'supplement') aggData[key].supp += amt; else aggData[key].usage += amt;
                 });
 
-                return (
-                    <div className="p-8 space-y-6 fade-in">
-                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                            <div className="p-5 border-b border-slate-100 bg-slate-50"><h3 className="font-bold">Breakdown per GL Code (FY{fy})</h3></div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-white border-b border-slate-200 text-slate-500 text-[11px] uppercase">
-                                        <tr><th className="px-6 py-4">GL Code & Name</th><th className="px-6 py-4 text-right">Approved</th><th className="px-6 py-4 text-right">Revised Budget</th><th className="px-6 py-4 text-right">Actual Usage</th><th className="px-6 py-4 text-right">Remaining</th><th className="px-6 py-4 text-center">Utilization</th></tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {glData.map((g, i) => (
-                                            <tr key={i} className="hover:bg-slate-50/80">
-                                                <td className="px-6 py-4"><div className="font-bold text-blue-600">{g.code}</div><div className="text-xs text-slate-500">{g.name}</div></td>
-                                                <td className="px-6 py-4 text-right text-slate-500">{formatRp(g.approved)}</td>
-                                                <td className="px-6 py-4 text-right font-bold">{formatRp(g.revised)}</td>
-                                                <td className="px-6 py-4 text-right font-bold text-purple-600">{formatRp(g.usage)}</td>
-                                                <td className="px-6 py-4 text-right font-bold text-amber-600">{formatRp(g.rem)}</td>
-                                                <td className="px-6 py-4 text-center"><span className="text-xs font-bold w-8">{g.pct}%</span></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )
-            };
-
-            const renderUsageEntry = () => {
-                const handleSaveUsage = (e) => {
-                    e.preventDefault();
-                    if(!user) return alert("Hanya user terdaftar yang dapat menginput transaksi!");
-                    const amt = parseRp(usageForm.amount);
-                    if(amt <= 0) return alert("Amount must be > 0");
-                    const newTxn = { id: `T${Date.now()}`, date: usageForm.date, year: fy, dept: usageForm.dept, code: usageForm.code, type: 'usage', amount: amt, desc: usageForm.desc, by: user.name };
-                    setTxns([newTxn, ...txns]); addLog('INPUT_USAGE', `Recorded Usage Rp ${formatRp(amt)} for GL ${usageForm.code}`);
-                    postToSheets('ADD_TXN', newTxn); setUsageForm({...usageForm, amount: '', desc: ''});
-                };
+                const uniqueGLs = []; const glMap = new Map();
+                const uniqueComps = []; const compMap = new Set();
                 
-                const selBudget = activeBudgets.find(b => b.code === usageForm.code && b.dept === usageForm.dept);
-                let gBudget = selBudget ? parseRp(selBudget.amount) : 0; let gUsage = 0;
-                activeTxns.forEach(t => { if(t.code === usageForm.code && t.dept === usageForm.dept) { const amt = parseRp(t.amount); if(t.type === 'usage') gUsage += amt; if(t.type === 'supplement') gBudget += amt; }});
-                const inputAmt = parseRp(usageForm.amount); const rem = gBudget - gUsage - inputAmt; const isOver = rem < 0;
+                Object.values(aggData).forEach(b => {
+                    if(!glMap.has(b.gl_code)) { glMap.set(b.gl_code, Array.from(b.all_names)[0] || b.gl_name); uniqueGLs.push({ code: b.gl_code, name: Array.from(b.all_names)[0] || b.gl_name }); }
+                    if(!compMap.has(b.company)) { compMap.add(b.company); uniqueComps.push(b.company); }
+                });
 
-                return (
-                    <div className="p-8 space-y-6 fade-in">
-                        {!user && (<div className="bg-amber-50 text-amber-800 p-4 rounded-xl flex items-center gap-3"><AlertCircle size={20}/><strong>Mode Guest Aktif</strong> (Input dikunci)</div>)}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className={`lg:col-span-2 bg-white rounded-2xl border border-slate-200 ${!user ? 'opacity-70 pointer-events-none' : ''}`}>
-                                <div className="p-5 border-b border-slate-100 bg-slate-50"><h3 className="font-bold">Input Usage</h3></div>
-                                <form onSubmit={handleSaveUsage} className="p-6 grid grid-cols-2 gap-6">
-                                    <div><label className="block text-xs font-bold mb-2">Tanggal *</label><input type="date" value={usageForm.date} onChange={e=>setUsageForm({...usageForm, date: e.target.value})} className="w-full p-3 border rounded-xl" required/></div>
-                                    <div><label className="block text-xs font-bold mb-2">Department *</label><select value={usageForm.dept} onChange={e=>setUsageForm({...usageForm, dept: e.target.value})} className="w-full p-3 border rounded-xl" required disabled={user && user.department !== 'All'}><option value="">Pilih Dept</option>{DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
-                                    <div className="col-span-2"><label className="block text-xs font-bold mb-2">GL Code *</label><select value={usageForm.code} onChange={e=>setUsageForm({...usageForm, code: e.target.value})} className="w-full p-3 border rounded-xl" required><option value="">Select GL Code</option>{activeBudgets.filter(b=>b.dept === usageForm.dept).map(b => <option key={b.code} value={b.code}>{b.code} - {b.name}</option>)}</select></div>
-                                    <div><label className="block text-xs font-bold mb-2">Keterangan *</label><input type="text" value={usageForm.desc} onChange={e=>setUsageForm({...usageForm, desc: e.target.value})} className="w-full p-3 border rounded-xl" required /></div>
-                                    <div><label className="block text-xs font-bold mb-2">Amount (Rp) *</label><input type="text" value={usageForm.amount} onChange={e => { let val = e.target.value.replace(/[^0-9]/g, ''); val = val.replace(/\B(?=(\d{3})+(?!\d))/g, "."); setUsageForm({...usageForm, amount: val}); }} className="w-full p-3 border rounded-xl font-bold" required/></div>
-                                    <div className="col-span-2 flex justify-end mt-2"><button type="submit" className="px-8 py-3 bg-amber-500 text-white font-bold rounded-xl"><Edit3 size={16} className="inline mr-2"/> Save Usage</button></div>
-                                </form>
-                            </div>
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col">
-                                <h3 className="font-bold flex items-center gap-2 mb-6"><CheckCircle2 className="text-blue-600" size={20}/> Budget Checking</h3>
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center pb-4 border-b"><div className="text-sm font-bold text-slate-600">Budget Available</div><div className="text-lg font-black">{formatRp(gBudget - gUsage)}</div></div>
-                                    <div className="flex justify-between items-center pb-4 border-b"><div className="text-sm font-bold text-slate-600">Input Usage</div><div className="text-lg font-black text-amber-600">{formatRp(inputAmt)}</div></div>
-                                    <div className="flex justify-between items-center pt-2"><div className="text-sm font-bold text-slate-600">Remaining</div><div className={`text-xl font-black ${isOver ? 'text-red-500' : 'text-emerald-500'}`}>{formatRp(rem)}</div></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                const filtered = Object.values(aggData).filter(item => 
+                    (filterBudgetGL === 'ALL' || item.gl_code === filterBudgetGL) &&
+                    (filterBudgetComp === 'ALL' || item.company === filterBudgetComp) &&
+                    (searchBudgetDesc === '' || (item.description && item.description.toLowerCase().includes(searchBudgetDesc.toLowerCase())))
                 );
-            };
 
-            const renderPlanning = () => {
-                const nextYear = fy + 1;
-                const drafts = budgets.filter(b => parseInt(b.year) === nextYear && (filterDept === 'All' || b.dept === filterDept));
-                
                 return (
-                    <div className="p-8 space-y-6 fade-in">
-                        <div className="bg-[#0f172a] rounded-3xl p-10 flex justify-between items-center shadow-lg relative overflow-hidden">
-                            <div className="relative z-10 text-white"><h2 className="text-2xl font-black mb-2 flex items-center gap-3"><CalendarDays className="text-amber-500"/> Next Year Planning - FY{nextYear}</h2><p className="text-slate-400 text-sm">Monitor budget proposals for the upcoming fiscal year.</p></div>
-                            <div className="relative z-10"><button onClick={handleRollover} disabled={!user || drafts.length === 0} className={`px-6 py-3.5 font-bold rounded-xl ${user && drafts.length > 0 ? 'bg-amber-500 text-white' : 'bg-slate-800 text-slate-500'}`}><CheckCircle2 size={18} className="inline mr-2"/> Approve & Rollover</button></div>
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full fade-in">
+                        <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
+                            <h3 className="font-bold text-slate-800 text-sm">Master Budget Breakdown</h3>
+                            <div className="flex space-x-2">
+                                <label className="cursor-pointer px-3 py-1 bg-white border border-slate-300 text-slate-700 rounded text-xs font-bold hover:bg-slate-50 flex items-center">
+                                    <input type="file" className="hidden" accept=".csv" onChange={()=>showToast("Sistem Upload CSV sedang disiapkan", "warning")} />
+                                    <span>📤 Upload CSV</span>
+                                </label>
+                                <button onClick={() => {
+                                    const exportData = filtered.map(r => ({
+                                        'Comp': r.company, 'Dept': r.department, 'GL Code': r.gl_code, 'GL Name': r.gl_name, 'Desc': r.description || '-',
+                                        'Initial Budget': r.initial, 'Supplement': r.supp, 'Usage': r.usage, 'Remaining': (r.initial + r.supp) - r.usage
+                                    })); downloadCSV(exportData, "Budget_Confirm");
+                                }} className="px-3 py-1 bg-slate-800 text-white rounded text-xs font-bold hover:bg-slate-700">📥 Download CSV</button>
+                            </div>
                         </div>
-                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                            <div className="p-5 border-b border-slate-100 bg-slate-50"><h3 className="font-bold">Draft Proposals (FY{nextYear})</h3></div>
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50 border-b text-[11px] uppercase"><tr><th className="px-6 py-4">Department & GL Code</th><th className="px-6 py-4 text-right">FY{fy} Budget</th><th className="px-6 py-4 text-right text-blue-600">Proposed FY{nextYear}</th><th className="px-6 py-4 text-center">Status</th></tr></thead>
-                                <tbody>
-                                    {drafts.map(d => {
-                                        const curr = budgets.find(b => b.code === d.code && b.dept === d.dept && parseInt(b.year) === fy);
-                                        const currAmt = curr ? parseRp(curr.amount) : 0; const dAmt = parseRp(d.amount); const diff = dAmt - currAmt; const pct = currAmt ? (diff/currAmt)*100 : 0;
+                        <div className="overflow-x-auto flex-1">
+                            <table className="w-full text-left text-xs whitespace-nowrap">
+                                <thead className="bg-white border-b border-slate-200 text-slate-500 uppercase sticky top-0 shadow-sm z-10">
+                                    <tr>
+                                        <th className="px-4 py-3 align-top"><div className="mb-1 text-[10px]">Filter Comp</div><select value={filterBudgetComp} onChange={e=>setFilterBudgetComp(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-slate-800 font-normal outline-none focus:border-blue-500 max-w-[120px] cursor-pointer bg-slate-50"><option value="ALL">- All -</option>{uniqueComps.sort().map(c => <option key={c} value={c}>{c}</option>)}</select></th>
+                                        <th className="px-4 py-3 align-top">Dept</th>
+                                        <th className="px-4 py-3 align-top"><div className="mb-1 text-[10px]">Filter GL Code</div><select value={filterBudgetGL} onChange={e=>setFilterBudgetGL(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-slate-800 font-normal outline-none focus:border-blue-500 max-w-[200px] cursor-pointer bg-slate-50"><option value="ALL">- All GL Codes -</option>{uniqueGLs.sort((a,b)=>a.code.localeCompare(b.code)).map(gl => <option key={gl.code} value={gl.code}>{gl.code} - {gl.name}</option>)}</select></th>
+                                        <th className="px-4 py-3 align-top"><div className="mb-1 text-[10px]">Search Desc</div><input type="text" placeholder="Cari..." value={searchBudgetDesc} onChange={(e) => setSearchBudgetDesc(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-slate-800 font-normal outline-none focus:border-blue-500 bg-slate-50" /></th>
+                                        <th className="px-4 py-3 text-right align-top">Initial</th><th className="px-4 py-3 text-right text-emerald-600 align-top">Supplement</th><th className="px-4 py-3 text-right text-purple-600 align-top">Usage</th><th className="px-4 py-3 text-right align-top">Remaining</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {filtered.map((r, i) => {
+                                        const rem = (r.initial + r.supp) - r.usage;
+                                        const combinedDesc = Array.from(r.all_desc).join(' | ');
+                                        const combinedNames = Array.from(r.all_names).join(' | ');
                                         return (
-                                            <tr key={d.id} className="border-b border-slate-100 hover:bg-slate-50">
-                                                <td className="px-6 py-5"><div className="font-bold">{d.code} - {d.dept}</div><div className="text-xs text-slate-500">{d.name}</div></td>
-                                                <td className="px-6 py-5 text-right">{formatRp(currAmt)}</td>
-                                                <td className="px-6 py-5 text-right bg-blue-50/30"><div className="font-black text-lg">{formatRp(dAmt)}</div>{currAmt > 0 && (<div className={`text-[11px] font-bold ${diff > 0 ? 'text-red-500' : 'text-emerald-500'}`}>{diff > 0 ? '+' : ''}{pct.toFixed(1)}% vs FY{fy}</div>)}</td>
-                                                <td className="px-6 py-5 text-center"><span className="px-3 py-1 bg-slate-100 text-[10px] font-bold uppercase rounded">{d.status || d.Status}</span></td>
+                                            <tr key={i} className="hover:bg-slate-50">
+                                                <td className="px-4 py-3 font-bold text-slate-700">{r.company}</td><td className="px-4 py-3">{r.department}</td>
+                                                <td className="px-4 py-3"><div className="font-bold text-blue-700">{r.gl_code}</div><div className="text-[10px] text-slate-500 max-w-[200px] whitespace-normal break-words">{combinedNames || r.gl_name}</div></td>
+                                                <td className="px-4 py-3 whitespace-normal break-words max-w-[300px]">{combinedDesc || r.description || '-'}</td>
+                                                <td className="px-4 py-3 text-right font-semibold">{formatUang(r.initial)}</td>
+                                                <td className="px-4 py-3 text-right font-bold text-emerald-600">{r.supp!==0?formatUang(r.supp):'-'}</td>
+                                                <td className="px-4 py-3 text-right font-bold text-purple-700">{r.usage!==0?formatUang(r.usage):'-'}</td>
+                                                <td className="px-4 py-3 text-right font-bold text-amber-500">{formatUang(rem)}</td>
                                             </tr>
-                                        )
+                                        );
                                     })}
                                 </tbody>
                             </table>
@@ -486,47 +359,609 @@
                 );
             };
 
-            const renderLogs = () => (
-                <div className="p-8 space-y-6 fade-in">
-                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                        <div className="p-5 border-b border-slate-100 bg-slate-50"><h3 className="font-bold flex items-center gap-2"><History size={18} className="text-blue-600"/> System Audit Trail</h3></div>
-                        <table className="w-full text-left text-sm">
-                            <thead className="border-b text-[10px] uppercase"><tr><th className="px-6 py-4">Timestamp</th><th className="px-6 py-4">User</th><th className="px-6 py-4">Action</th><th className="px-6 py-4">Details</th></tr></thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {logs.map((log) => (
-                                    <tr key={log.id} className="hover:bg-slate-50">
-                                        <td className="px-6 py-4 font-medium">{new Date(log.time).toLocaleString('id-ID')}</td>
-                                        <td className="px-6 py-4 font-bold">{log.user}</td>
-                                        <td className="px-6 py-4"><span className="bg-blue-50 px-2.5 py-1 rounded text-[10px] font-bold text-blue-700">{log.action}</span></td>
-                                        <td className="px-6 py-4 text-slate-600">{log.details}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+            const renderUsageTable = () => {
+                const uniqueGLs = []; const glMap = new Map();
+                const uniqueUsageComps = []; const usageCompMap = new Set();
+                
+                activeTxns.forEach(t => {
+                    if(!glMap.has(t.gl_code) && t.gl_code) { glMap.set(t.gl_code, t.gl_name); uniqueGLs.push({ code: t.gl_code, name: t.gl_name }); }
+                    if(!usageCompMap.has(t.company) && t.company) { usageCompMap.add(t.company); uniqueUsageComps.push(t.company); }
+                });
+
+                const filtered = activeTxns.filter(t => 
+                     (filterUsageGL === 'ALL' || t.gl_code === filterUsageGL) &&
+                     (filterUsageComp === 'ALL' || t.company === filterUsageComp) &&
+                     (searchUsageDesc === '' || (t.description && t.description.toLowerCase().includes(searchUsageDesc.toLowerCase())))
+                );
+
+                const handleSaveUsage = (e) => {
+                    e.preventDefault();
+                    if(usageForm.gl === '') return showToast("Pilih GL Code!", "error");
+                    setIsSubmitting(true);
+                    const amt = parseFloat(usageForm.amount) || 0; 
+                    const glData = activeBudgets.find(b => b.gl_code === usageForm.gl);
+                    const glNameFound = glData ? glData.gl_name : '';
+                    const rate = data.rates[activeYear] || 15000; 
+
+                    const payload = { 
+                        id: 'U'+new Date().getTime(), date: usageForm.date, year: activeYear, 
+                        company: usageForm.company, department: usageForm.dept, gl_code: usageForm.gl, gl_name: glNameFound,
+                        type: 'usage_manual', amount_idr: currency === 'IDR' ? amt : amt * rate, 
+                        amount_usd: currency === 'USD' ? amt : amt / rate, description: usageForm.desc, by: user.name 
+                    };
+                    
+                    const optimisticTxns = [payload, ...data.transactions];
+                    setData(prev => ({...prev, transactions: optimisticTxns}));
+
+                    if (typeof google !== 'undefined' && google.script) {
+                        google.script.run.withSuccessHandler(res=>{
+                            setIsSubmitting(false);
+                            if(res.success) { showToast("Usage Manual Disimpan!"); setUsageForm({...usageForm, amount:'', desc:''}); fetchData(true); } 
+                            else { showToast(res.error, 'error'); fetchData(true); }
+                        }).saveTransaction(payload);
+                    } else if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                        apiCall('saveTransaction', payload).then(res=>{
+                            setIsSubmitting(false);
+                            if(res.success) { showToast("Usage Manual Disimpan!"); setUsageForm({...usageForm, amount:'', desc:''}); fetchData(true); } 
+                            else { showToast(res.error, 'error'); fetchData(true); }
+                        }).catch(err => { setIsSubmitting(false); showToast(err.toString(), 'error'); });
+                    } else {
+                        setIsSubmitting(false); showToast("Demo Mode: Pengeluaran Tersimpan!"); setUsageForm({...usageForm, amount:'', desc:''});
+                    }
+                };
+
+                const uniqueGLsForInput = []; const glMapInput = new Map();
+                activeBudgets.filter(b=>b.department===usageForm.dept && b.company===usageForm.company).forEach(b => {
+                    if(!glMapInput.has(b.gl_code)) { glMapInput.set(b.gl_code, b.gl_name); uniqueGLsForInput.push({ code: b.gl_code, name: b.gl_name }); }
+                });
+
+                return (
+                    <div className="flex flex-col h-full gap-6 fade-in">
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 shrink-0">
+                            <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2"><h3 className="font-bold text-slate-800">Input Manual Usage (Pengeluaran)</h3></div>
+                            <form onSubmit={handleSaveUsage} className="space-y-4">
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div><label className="block text-xs font-bold text-slate-500 mb-1">Tanggal</label><input type="date" required value={usageForm.date} onChange={e=>setUsageForm({...usageForm,date:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"/></div>
+                                    <div><label className="block text-xs font-bold text-slate-500 mb-1">Company</label><select required value={usageForm.company} onChange={e=>setUsageForm({...usageForm,company:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50"><option value="">- Pilih -</option>{data.companies.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
+                                    <div><label className="block text-xs font-bold text-slate-500 mb-1">Department</label><select required value={usageForm.dept} onChange={e=>setUsageForm({...usageForm,dept:e.target.value})} disabled={isUserLocked} className={`w-full border border-slate-300 rounded p-2 text-sm ${isUserLocked?'bg-slate-100':'bg-slate-50'}`}><option value="">- Pilih -</option>{data.departments.map(d=><option key={d} value={d}>{d}</option>)}</select></div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 items-end">
+                                    <div className="col-span-1"><label className="block text-xs font-bold text-slate-500 mb-1">Pilih GL Code</label><select required value={usageForm.gl} onChange={e=>setUsageForm({...usageForm,gl:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 cursor-pointer"><option value="">- Filter Comp & Dept Dulu -</option>{uniqueGLsForInput.sort((a,b)=>a.code.localeCompare(b.code)).map(gl => <option key={gl.code} value={gl.code}>{gl.code} - {gl.name}</option>)}</select></div>
+                                    <div className="col-span-1"><label className="block text-xs font-bold text-slate-500 mb-1">Amount ({currency})</label><input type="number" step="any" required value={usageForm.amount} onChange={e=>setUsageForm({...usageForm,amount:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm" placeholder="Contoh: 5000000"/></div>
+                                    <div className="col-span-1"><button type="submit" disabled={isSubmitting} className="w-full bg-slate-800 text-white font-bold py-2 rounded shadow-sm hover:bg-slate-700">{isSubmitting ? 'Saving...' : 'Simpan Pengeluaran'}</button></div>
+                                </div>
+                                <div><label className="block text-xs font-bold text-slate-500 mb-1">Keterangan / Description</label><input type="text" required value={usageForm.desc} onChange={e=>setUsageForm({...usageForm,desc:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm" placeholder="Detail pengeluaran..."/></div>
+                            </form>
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
+                            <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
+                                <h3 className="font-bold text-slate-800 text-sm">Usage & Transactions Logs</h3>
+                                <div className="flex space-x-2">
+                                    <label className="cursor-pointer px-3 py-1 bg-white border border-slate-300 text-slate-700 rounded text-xs font-bold hover:bg-slate-50 flex items-center"><input type="file" className="hidden" accept=".csv" onChange={()=>showToast("Sistem Upload CSV sedang disiapkan", "warning")} /><span>📤 Upload CSV</span></label>
+                                    <button onClick={() => { downloadCSV(filtered.map(r => ({ 'Date': r.date, 'Comp': r.company, 'Dept': r.department, 'GL Code': r.gl_code, 'GL Name': r.gl_name, 'Type': r.type, 'Description': r.description, 'Amount': currency === 'IDR' ? r.amount_idr : r.amount_usd })), "Usage_Logs"); }} className="px-3 py-1 bg-slate-800 text-white rounded text-xs font-bold hover:bg-slate-700">📥 Download CSV</button>
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto flex-1">
+                                <table className="w-full text-left text-xs whitespace-nowrap">
+                                    <thead className="bg-white border-b border-slate-200 text-slate-500 uppercase sticky top-0 shadow-sm z-10">
+                                        <tr>
+                                            <th className="px-4 py-3 align-top">Date</th>
+                                            <th className="px-4 py-3 align-top"><div className="mb-1 text-[10px]">Filter Comp</div><select value={filterUsageComp} onChange={e=>setFilterUsageComp(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-slate-800 font-normal outline-none focus:border-blue-500 max-w-[120px] cursor-pointer bg-slate-50"><option value="ALL">- All -</option>{uniqueUsageComps.sort().map(c => <option key={c} value={c}>{c}</option>)}</select></th>
+                                            <th className="px-4 py-3 align-top">Dept</th>
+                                            <th className="px-4 py-3 align-top"><div className="mb-1 text-[10px]">Filter GL Code</div><select value={filterUsageGL} onChange={e=>setFilterUsageGL(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-slate-800 font-normal outline-none focus:border-blue-500 max-w-[200px] cursor-pointer bg-slate-50"><option value="ALL">- All GL Codes -</option>{uniqueGLs.sort((a,b)=>a.code.localeCompare(b.code)).map(gl => <option key={gl.code} value={gl.code}>{gl.code} - {gl.name}</option>)}</select></th>
+                                            <th className="px-4 py-3 align-top">Source</th>
+                                            <th className="px-4 py-3 align-top"><div className="mb-1 text-[10px]">Search Desc</div><input type="text" placeholder="Cari..." value={searchUsageDesc} onChange={(e) => setSearchUsageDesc(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-slate-800 font-normal outline-none focus:border-blue-500 bg-slate-50" /></th>
+                                            <th className="px-4 py-3 text-right align-top">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {filtered.map((r, i) => {
+                                            const typeLower = String(r.type).toLowerCase();
+                                            return (
+                                                <tr key={i} className="hover:bg-slate-50">
+                                                    <td className="px-4 py-3 text-slate-500">{r.date}</td><td className="px-4 py-3 font-bold">{r.company}</td><td className="px-4 py-3">{r.department}</td>
+                                                    <td className="px-4 py-3"><div className="font-bold text-blue-600">{r.gl_code}</div><div className="text-[10px] text-slate-500">{r.gl_name}</div></td>
+                                                    <td className="px-4 py-3">{typeLower === 'supplement' ? <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-100 text-emerald-700">Supplement</span> : typeLower === 'usage_manual' ? <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-100 text-amber-700">Manual Entry</span> : <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-purple-100 text-purple-700">Finance Data</span>}</td>
+                                                    <td className="px-4 py-3 whitespace-normal break-words max-w-[250px]">{r.description}</td>
+                                                    <td className={`px-4 py-3 text-right font-bold ${typeLower==='supplement'?'text-emerald-600':'text-slate-700'}`}>{formatUang(currency === 'IDR' ? r.amount_idr : r.amount_usd)}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            );
+                );
+            };
+
+            const renderSupplementary = () => {
+                const handleSaveSupp = (e) => {
+                    e.preventDefault();
+                    if(suppForm.gl === '') return showToast("Pilih GL Code!", "error");
+                    setIsSubmitting(true);
+                    const amt = parseFloat(suppForm.amount) || 0; 
+                    const glData = activeBudgets.find(b => b.gl_code === suppForm.gl);
+                    const glNameFound = glData ? glData.gl_name : '';
+                    const rate = data.rates[activeYear] || 15000; 
+
+                    const payload = { 
+                        id: 'T'+new Date().getTime(), date: suppForm.date, year: activeYear, company: suppForm.company, department: suppForm.dept, gl_code: suppForm.gl, gl_name: glNameFound,
+                        type: 'supplement', amount_idr: currency === 'IDR' ? amt : amt * rate, amount_usd: currency === 'USD' ? amt : amt / rate, description: suppForm.desc, by: user.name 
+                    };
+                    
+                    const optimisticTxns = [payload, ...data.transactions];
+                    setData(prev => ({...prev, transactions: optimisticTxns}));
+
+                    if (typeof google !== 'undefined' && google.script) {
+                        google.script.run.withSuccessHandler(res=>{
+                            setIsSubmitting(false);
+                            if(res.success) { showToast("Supplementary Disimpan!"); setSuppForm({...suppForm, amount:'', desc:''}); fetchData(true); } 
+                            else { showToast(res.error, 'error'); fetchData(true); }
+                        }).saveTransaction(payload);
+                    } else if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                        apiCall('saveTransaction', payload).then(res=>{
+                            setIsSubmitting(false);
+                            if(res.success) { showToast("Supplementary Disimpan!"); setSuppForm({...suppForm, amount:'', desc:''}); fetchData(true); } 
+                            else { showToast(res.error, 'error'); fetchData(true); }
+                        }).catch(err => { setIsSubmitting(false); showToast(err.toString(), 'error'); });
+                    } else {
+                        setIsSubmitting(false); showToast("Demo Mode: Supplementary Tersimpan!"); setSuppForm({...suppForm, amount:'', desc:''});
+                    }
+                };
+
+                const uniqueGLs = []; const glMap = new Map();
+                activeBudgets.filter(b=>b.department===suppForm.dept && b.company===suppForm.company).forEach(b => {
+                    if(!glMap.has(b.gl_code)) { glMap.set(b.gl_code, b.gl_name); uniqueGLs.push({ code: b.gl_code, name: b.gl_name }); }
+                });
+
+                const suppLogs = activeTxns.filter(t => {
+                    const isSupp = String(t.type).toLowerCase() === 'supplement';
+                    const matchDesc = searchSuppDesc === '' || (t.description && t.description.toLowerCase().includes(searchSuppDesc.toLowerCase()));
+                    return isSupp && matchDesc;
+                });
+
+                return (
+                    <div className="flex flex-col h-full gap-6 fade-in">
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 shrink-0">
+                            <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Input Supplementary Budget (Bisa Negatif/Minus)</h3>
+                            <form onSubmit={handleSaveSupp} className="space-y-4">
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div><label className="block text-xs font-bold text-slate-500 mb-1">Tanggal</label><input type="date" required value={suppForm.date} onChange={e=>setSuppForm({...suppForm,date:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"/></div>
+                                    <div><label className="block text-xs font-bold text-slate-500 mb-1">Company</label><select required value={suppForm.company} onChange={e=>setSuppForm({...suppForm,company:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50"><option value="">- Pilih -</option>{data.companies.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
+                                    <div><label className="block text-xs font-bold text-slate-500 mb-1">Department</label><select required value={suppForm.dept} onChange={e=>setSuppForm({...suppForm,dept:e.target.value})} disabled={isUserLocked} className={`w-full border border-slate-300 rounded p-2 text-sm ${isUserLocked?'bg-slate-100':'bg-slate-50'}`}><option value="">- Pilih -</option>{data.departments.map(d=><option key={d} value={d}>{d}</option>)}</select></div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 items-end">
+                                    <div className="col-span-1"><label className="block text-xs font-bold text-slate-500 mb-1">Pilih GL Code</label><select required value={suppForm.gl} onChange={e=>setSuppForm({...suppForm,gl:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 cursor-pointer"><option value="">- Filter Comp & Dept Dulu -</option>{uniqueGLs.sort((a,b)=>a.code.localeCompare(b.code)).map(gl => <option key={gl.code} value={gl.code}>{gl.code} - {gl.name}</option>)}</select></div>
+                                    <div className="col-span-1"><label className="block text-xs font-bold text-slate-500 mb-1">Amount ({currency})</label><input type="number" step="any" required value={suppForm.amount} onChange={e=>setSuppForm({...suppForm,amount:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm" placeholder="Bisa minus: -500000"/></div>
+                                    <div className="col-span-1"><button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white font-bold py-2 rounded shadow-sm hover:bg-blue-700">{isSubmitting ? 'Saving...' : 'Simpan Supplementary'}</button></div>
+                                </div>
+                                <div><label className="block text-xs font-bold text-slate-500 mb-1">Keterangan / Description</label><input type="text" required value={suppForm.desc} onChange={e=>setSuppForm({...suppForm,desc:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"/></div>
+                            </form>
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
+                            <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-end">
+                                <h3 className="font-bold text-slate-800 text-sm">Katalog Supplementary Aktif</h3>
+                                <div className="flex space-x-2">
+                                    <label className="cursor-pointer px-3 py-1 bg-white border border-slate-300 text-slate-700 rounded text-xs font-bold hover:bg-slate-50 flex items-center"><input type="file" className="hidden" accept=".csv" onChange={()=>showToast("Sistem Upload CSV sedang disiapkan", "warning")} /><span>📤 Upload CSV</span></label>
+                                    <button onClick={() => { downloadCSV(suppLogs.map(r => ({ 'Date': r.date, 'Comp': r.company, 'Dept': r.department, 'GL Code': r.gl_code, 'GL Name': r.gl_name, 'Description': r.description, 'Amount': currency === 'IDR' ? r.amount_idr : r.amount_usd })), "Supplementary_Logs"); }} className="px-3 py-1 bg-slate-800 text-white rounded text-xs font-bold">📥 Download CSV</button>
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto flex-1">
+                                <table className="w-full text-left text-xs whitespace-nowrap">
+                                    <thead className="bg-white border-b border-slate-200 text-slate-500 uppercase sticky top-0 shadow-sm z-10">
+                                        <tr>
+                                            <th className="px-4 py-3 align-top">Date</th><th className="px-4 py-3 align-top">Comp</th><th className="px-4 py-3 align-top">Dept</th><th className="px-4 py-3 align-top">GL Code & Name</th>
+                                            <th className="px-4 py-3 align-top"><div className="mb-1 text-[10px]">Search Desc</div><input type="text" placeholder="Cari..." value={searchSuppDesc} onChange={(e) => setSearchSuppDesc(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-slate-800 font-normal outline-none focus:border-blue-500 bg-slate-50" /></th>
+                                            <th className="px-4 py-3 text-right align-top">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {suppLogs.map((t, i) => (
+                                            <tr key={i} className="hover:bg-slate-50">
+                                                <td className="px-4 py-3 text-slate-500">{t.date}</td><td className="px-4 py-3 font-bold">{t.company}</td><td className="px-4 py-3">{t.department}</td>
+                                                <td className="px-4 py-3"><span className="font-bold text-blue-600">{t.gl_code}</span><br/><span className="text-[10px] text-slate-500">{t.gl_name}</span></td>
+                                                <td className="px-4 py-3 whitespace-normal break-words max-w-[250px]">{t.description}</td>
+                                                <td className="px-4 py-3 text-right font-bold text-emerald-600">{formatUang(currency === 'IDR' ? t.amount_idr : t.amount_usd)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderPlanning = () => {
+                const nextYear = String(parseInt(activeYear) + 1);
+                const planMap = {};
+                
+                activeBudgets.forEach(b => {
+                    const key = `${b.company}-${b.gl_code}`;
+                    if(!planMap[key]) planMap[key] = { comp: b.company, dept: b.department, code: b.gl_code, name: b.gl_name, b_curr: 0, u_curr: 0, p_next: 0 };
+                    planMap[key].b_curr += (currency === 'IDR' ? safeNum(b.amount_idr) : safeNum(b.amount_usd));
+                });
+
+                activeTxns.forEach(t => {
+                    const key = `${t.company}-${t.gl_code}`;
+                    if(planMap[key] && String(t.type).toLowerCase() !== 'supplement') planMap[key].u_curr += (currency === 'IDR' ? safeNum(t.amount_idr) : safeNum(t.amount_usd));
+                });
+
+                (data.budgets || []).forEach(b => {
+                    if(String(b.year).trim() === nextYear && String(b.status).trim().toLowerCase() === 'draft' && (subDept === 'All Area HCGS' || String(b.department).trim() === subDept) && (activeCompany === 'All' || String(b.company).trim() === activeCompany)) {
+                        const key = `${b.company}-${b.gl_code}`;
+                        const amt = (currency === 'IDR' ? safeNum(b.amount_idr) : safeNum(b.amount_usd));
+                        if(planMap[key]) planMap[key].p_next += amt;
+                        else planMap[key] = { comp: b.company, dept: b.department, code: b.gl_code, name: b.gl_name, b_curr: 0, u_curr: 0, p_next: amt };
+                    }
+                });
+
+                const planningRows = Object.values(planMap);
+
+                const handleSaveDraft = (row) => {
+                    if(draftInput === '') return;
+                    setIsSubmitting(true);
+                    const amt = parseFloat(draftInput) || 0;
+                    const rate = data.rates[nextYear] || 15000;
+                    
+                    const payload = {
+                        year: nextYear, company: row.comp, department: row.dept, gl_code: row.code, gl_name: row.name,
+                        amount_idr: currency === 'IDR' ? amt : amt * rate, amount_usd: currency === 'USD' ? amt : amt / rate
+                    };
+
+                    if (typeof google !== 'undefined' && google.script) {
+                        google.script.run.withSuccessHandler(res=>{
+                            setIsSubmitting(false); setEditingDraft(null);
+                            if(res.success) { showToast("Draft Tersimpan!"); fetchData(true); } else { showToast(res.error, 'error'); }
+                        }).saveDraftBudget(payload);
+                    } else if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                        apiCall('saveDraftBudget', payload).then(res=>{
+                            setIsSubmitting(false); setEditingDraft(null);
+                            if(res.success) { showToast("Draft Tersimpan!"); fetchData(true); } else { showToast(res.error, 'error'); }
+                        }).catch(err => { setIsSubmitting(false); showToast(err.toString(), 'error'); });
+                    } else {
+                        setIsSubmitting(false); setEditingDraft(null); showToast("Demo Mode: Draft Tersimpan!");
+                        const newDraft = { ...payload, id: 'D'+new Date().getTime(), status: 'Draft' };
+                        const newBudgets = [...data.budgets.filter(b => !(b.year === payload.year && b.company === payload.company && b.department === payload.department && b.gl_code === payload.gl_code)), newDraft];
+                        setData(prev => ({...prev, budgets: newBudgets}));
+                    }
+                };
+
+                return (
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden fade-in flex flex-col h-full relative">
+                        {detailModal && (
+                            <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-6 fade-in backdrop-blur-sm">
+                                <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
+                                    <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-[#0f172a] text-white">
+                                        <div><h3 className="font-bold text-lg">Detail Breakdown (FY{activeYear})</h3><p className="text-xs text-blue-300 font-medium">[{detailModal.comp}] GL: {detailModal.code} - {detailModal.name}</p></div>
+                                        <button onClick={()=>setDetailModal(null)} className="text-white hover:text-red-400 font-bold px-3 py-1 text-xl">&times;</button>
+                                    </div>
+                                    <div className="flex-1 flex overflow-hidden">
+                                        <div className="w-1/2 flex flex-col border-r border-slate-200">
+                                            <div className="p-3 bg-slate-100 border-b border-slate-200 font-bold text-xs text-slate-700 text-center">INITIAL BUDGET DETAILS</div>
+                                            <div className="flex-1 overflow-auto p-4">
+                                                <table className="w-full text-left text-xs">
+                                                    <thead className="text-slate-400 border-b border-slate-200"><tr><th className="pb-2">Description</th><th className="pb-2 text-right">Amount</th></tr></thead>
+                                                    <tbody>
+                                                        {activeBudgets.filter(b => b.gl_code === detailModal.code && b.company === detailModal.comp).map((b,i) => (
+                                                            <tr key={i} className="border-b border-slate-100 hover:bg-slate-50"><td className="py-2">{b.description || '-'}</td><td className="py-2 text-right font-bold">{formatUang(currency === 'IDR' ? b.amount_idr : b.amount_usd)}</td></tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div className="w-1/2 flex flex-col">
+                                            <div className="p-3 bg-slate-100 border-b border-slate-200 font-bold text-xs text-slate-700 text-center">USAGE TRANSACTIONS</div>
+                                            <div className="flex-1 overflow-auto p-4">
+                                                <table className="w-full text-left text-xs">
+                                                    <thead className="text-slate-400 border-b border-slate-200"><tr><th className="pb-2">Date</th><th className="pb-2">Desc</th><th className="pb-2 text-right">Amount</th></tr></thead>
+                                                    <tbody>
+                                                        {activeTxns.filter(t => t.gl_code === detailModal.code && t.company === detailModal.comp && String(t.type).toLowerCase() !== 'supplement').map((t,i) => (
+                                                            <tr key={i} className="border-b border-slate-100 hover:bg-slate-50"><td className="py-2 text-slate-400">{t.date}</td><td className="py-2 truncate max-w-[120px]" title={t.description}>{t.description}</td><td className="py-2 text-right font-bold text-purple-700">{formatUang(currency === 'IDR' ? t.amount_idr : t.amount_usd)}</td></tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div className="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
+                            <div><h3 className="font-bold text-slate-800">FY {nextYear} Budget Submission Dashboard</h3><p className="text-xs text-slate-500 mt-1">Interactive Inline Editing Enabled. Click cells to edit Proposed Budget.</p></div>
+                            <div className="flex space-x-2">
+                                <label className="cursor-pointer px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded text-sm font-bold hover:bg-slate-50 flex items-center"><input type="file" className="hidden" accept=".csv" onChange={()=>showToast("Sistem Upload CSV sedang disiapkan", "warning")} /><span>📤 Upload CSV</span></label>
+                                <button onClick={() => { downloadCSV(planningRows.map(r => ({ 'Comp': r.comp, 'Dept': r.dept, 'GL Code': r.code, 'GL Name': r.name, [`FY${activeYear} Budget`]: r.b_curr, [`FY${activeYear} Usage`]: r.u_curr, [`Proposed FY${parseInt(activeYear) + 1}`]: r.p_next })), "Budget_Proposal"); }} className="px-4 py-1.5 bg-blue-600 text-white text-sm font-bold rounded shadow-sm hover:bg-blue-700">📥 Download CSV</button>
+                            </div>
+                        </div>
+                        <div className="overflow-x-auto flex-1">
+                            <table className="w-full text-left text-xs whitespace-nowrap">
+                                <thead className="bg-white border-b border-slate-200 text-slate-500 uppercase sticky top-0 shadow-sm z-10">
+                                    <tr><th className="px-4 py-3">Comp</th><th className="px-4 py-3">Dept</th><th className="px-4 py-3">GL Code & Name</th><th className="px-4 py-3 text-right">FY{activeYear} Budget</th><th className="px-4 py-3 text-right">FY{activeYear} Usage</th><th className="px-4 py-3 text-right bg-blue-50 text-blue-700 font-bold border-l border-blue-200">Proposed FY{nextYear}</th><th className="px-4 py-3 text-center">Action</th></tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {planningRows.map((r, i) => (
+                                        <tr key={i} className="hover:bg-slate-50">
+                                            <td className="px-4 py-3 font-bold">{r.comp}</td><td className="px-4 py-3">{r.dept}</td>
+                                            <td className="px-4 py-3"><div className="font-bold text-slate-800">{r.code}</div><div className="text-[10px] text-slate-500">{r.name}</div></td>
+                                            <td className="px-4 py-3 text-right text-slate-500 font-medium">{formatUang(r.b_curr)}</td>
+                                            <td className="px-4 py-3 text-right font-medium text-purple-700">{formatUang(r.u_curr)}</td>
+                                            
+                                            <td className="px-4 py-2 text-right bg-blue-50/30 border-l border-blue-100 group transition-colors">
+                                                {editingDraft === `${r.comp}-${r.code}` ? (
+                                                    <div className="flex flex-col items-end space-y-1">
+                                                        <input type="number" autoFocus className="w-32 p-1 border-b-2 border-blue-500 bg-white text-right font-bold text-blue-800 outline-none shadow-sm rounded-sm" value={draftInput} onChange={(e) => setDraftInput(e.target.value)} placeholder="Amount..." />
+                                                        <div className="flex space-x-1">
+                                                            <button onClick={() => setEditingDraft(null)} className="text-[9px] px-2 py-0.5 bg-slate-200 text-slate-600 rounded">Cancel</button>
+                                                            <button onClick={() => handleSaveDraft(r)} className="text-[9px] px-2 py-0.5 bg-blue-600 text-white font-bold rounded shadow-sm hover:bg-blue-700">{isSubmitting ? '...' : 'Save'}</button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="cursor-pointer p-2 rounded hover:bg-blue-100/50 flex flex-col items-end justify-center h-full" onClick={() => { setEditingDraft(`${r.comp}-${r.code}`); setDraftInput(r.p_next > 0 ? r.p_next : ''); }} title="Click to Input/Edit Draft">
+                                                        <div className={`font-bold ${r.p_next > 0 ? 'text-blue-700 text-sm' : 'text-slate-400 text-xs italic'}`}>{r.p_next > 0 ? formatUang(r.p_next) : 'Klik u/ Input Draft'}</div>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-center"><button onClick={()=>setDetailModal(r)} className="px-4 py-1 bg-slate-800 text-white rounded font-bold hover:bg-slate-700 shadow-sm text-[10px]">Detail</button></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderReports = () => {
+                const nextYear = String(parseInt(activeYear) + 1);
+                const repBudgets = activeBudgets;
+                const repDrafts = (data.budgets || []).filter(b => String(b.year).trim() === nextYear && String(b.status).trim().toLowerCase() === 'draft' && (subDept === 'All Area HCGS' || String(b.department).trim() === subDept) && (activeCompany === 'All' || String(b.company).trim() === activeCompany));
+                
+                const glMap = new Map();
+                const getOrCreateGL = (code, name, dept) => {
+                    const key = `${dept}-${code}`;
+                    if(!glMap.has(key)) glMap.set(key, { dept, code, name, b_curr: 0, p_next: 0 });
+                    return glMap.get(key);
+                };
+
+                repBudgets.forEach(b => { getOrCreateGL(b.gl_code, b.gl_name, b.department).b_curr += currency === 'IDR' ? safeNum(b.amount_idr) : safeNum(b.amount_usd); });
+                repDrafts.forEach(b => { getOrCreateGL(b.gl_code, b.gl_name, b.department).p_next += currency === 'IDR' ? safeNum(b.amount_idr) : safeNum(b.amount_usd); });
+
+                const consolidatedData = Array.from(glMap.values()).map(item => {
+                    const diffVal = item.p_next - item.b_curr;
+                    const diffPct = item.b_curr > 0 ? (diffVal / item.b_curr) * 100 : (item.p_next > 0 ? 100 : 0);
+                    return { ...item, diffVal, diffPct };
+                });
+
+                const topIncrements = [...consolidatedData].filter(i => i.diffVal > 0).sort((a,b) => b.diffVal - a.diffVal).slice(0, 5);
+                const topSavings = [...consolidatedData].filter(i => i.diffVal < 0 && i.p_next > 0).sort((a,b) => a.diffVal - b.diffVal).slice(0, 5);
+                const deletedBudgets = [...consolidatedData].filter(i => i.b_curr > 0 && i.p_next === 0).sort((a,b) => b.b_curr - a.b_curr);
+
+                const deptSummary = {};
+                consolidatedData.forEach(r => {
+                    if(!deptSummary[r.dept]) deptSummary[r.dept] = { dept: r.dept, b_curr: 0, p_next: 0 };
+                    deptSummary[r.dept].b_curr += r.b_curr;
+                    deptSummary[r.dept].p_next += r.p_next;
+                });
+                const chartData = Object.values(deptSummary).map(d => ({ name: d.dept, Budget26: d.b_curr, Proposed27: d.p_next }));
+
+                const VarianceTable = ({ title, data, type }) => (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-6">
+                        <div className={`p-4 border-b border-slate-200 flex items-center justify-between ${type === 'inc' ? 'bg-amber-50' : type === 'sav' ? 'bg-emerald-50' : 'bg-red-50'}`}><h3 className={`font-bold text-sm ${type === 'inc' ? 'text-amber-800' : type === 'sav' ? 'text-emerald-800' : 'text-red-800'}`}>{title}</h3></div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs whitespace-nowrap">
+                                <thead className="bg-white text-slate-500 uppercase border-b border-slate-100">
+                                    <tr><th className="px-4 py-3">Dept</th><th className="px-4 py-3">GL Category</th><th className="px-4 py-3 text-right">FY{activeYear}</th><th className="px-4 py-3 text-right">Proposed FY{nextYear}</th><th className="px-4 py-3 text-right">Variance</th><th className="px-4 py-3 text-center">%</th></tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {data.length === 0 ? <tr><td colSpan="6" className="px-4 py-6 text-center text-slate-400 italic">No significant variances found in this category.</td></tr> : data.map((r, i) => (
+                                        <tr key={i} className="hover:bg-slate-50">
+                                            <td className="px-4 py-3 font-semibold text-slate-500">{r.dept}</td>
+                                            <td className="px-4 py-3"><div className="font-bold text-slate-700">{r.code}</div><div className="text-[9px] text-slate-500 max-w-[200px] truncate" title={r.name}>{r.name}</div></td>
+                                            <td className="px-4 py-3 text-right text-slate-500">{formatUang(r.b_curr)}</td><td className="px-4 py-3 text-right font-bold text-[#0f172a]">{formatUang(r.p_next)}</td>
+                                            <td className={`px-4 py-3 text-right font-bold ${r.diffVal > 0 ? 'text-amber-600':'text-emerald-600'}`}>{r.diffVal > 0 ? '+':''}{formatUang(r.diffVal)}</td>
+                                            <td className="px-4 py-3 text-center"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.diffPct > 0 ? 'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700'}`}>{r.diffPct > 0 ? '+':''}{r.diffPct.toFixed(0)}%</span></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+
+                return (
+                    <div className="space-y-6 fade-in h-full overflow-y-auto pb-10 relative">
+                        <div className="bg-[#0f172a] p-6 rounded-2xl flex justify-between items-center text-white shadow-lg">
+                            <div><h2 className="text-xl font-bold">Strategic Executive Summary FY{nextYear}</h2><p className="text-xs text-blue-300 mt-1">Focusing on material variances and strategic impact analysis.</p></div>
+                            <div className="flex items-center space-x-2 bg-slate-800 p-2 rounded-lg border border-slate-700">
+                                <span className="text-[10px] text-slate-400 uppercase font-bold pl-2">Entity View:</span>
+                                <span className="text-white text-xs font-bold pr-2">{activeCompany === 'All' ? 'Consolidated (All)' : activeCompany}</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-80">
+                             <h3 className="font-bold text-slate-800 mb-4 text-center">Budget Transition Outlook: FY{activeYear} vs FY{nextYear}</h3>
+                             <ResponsiveContainer width="100%" height="100%">
+                                 <BarChart data={chartData} margin={{top: 10, right: 30, left: 20, bottom: 20}}>
+                                     <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                                     <XAxis dataKey="name" tick={{fontSize: 10}} angle={-15} textAnchor="end"/>
+                                     <YAxis tickFormatter={formatShort} tick={{fontSize: 10}}/>
+                                     <RechartsTooltip formatter={(val) => formatUang(val)} />
+                                     <Legend wrapperStyle={{fontSize: '11px'}} />
+                                     <Bar dataKey="Budget26" name={`Initial Budget FY${activeYear}`} fill="#94a3b8" radius={[4,4,0,0]} />
+                                     <Bar dataKey="Proposed27" name={`Proposed Budget FY${nextYear}`} fill="#1d4ed8" radius={[4,4,0,0]} />
+                                 </BarChart>
+                             </ResponsiveContainer>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <VarianceTable title={`Top 5 Cost Increments (Highest Strategic Impact)`} data={topIncrements} type="inc" />
+                            <div className="flex flex-col gap-6">
+                                <VarianceTable title={`Top Cost Savings Identified`} data={topSavings} type="sav" />
+                                <VarianceTable title={`Budget Eliminations (Zeroed out for FY${nextYear})`} data={deletedBudgets} type="del" />
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderAdmin = () => {
+                const handleSaveMaster = (e) => {
+                    e.preventDefault(); setIsSubmitting(true);
+                    
+                    if (typeof google !== 'undefined' && google.script) {
+                        google.script.run.withSuccessHandler(r=>{
+                            setIsSubmitting(false); if(r.success){ showToast("Master Data Disimpan!"); fetchData(true); setAdminForm({...adminForm, value:''}); } else showToast(r.error, 'error');
+                        }).saveMasterData(adminForm.type, adminForm.value);
+                    } else if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                        apiCall('saveMasterData', { type: adminForm.type, value: adminForm.value }).then(r=>{
+                            setIsSubmitting(false); if(r.success){ showToast("Master Data Disimpan!"); fetchData(true); setAdminForm({...adminForm, value:''}); } else showToast(r.error, 'error');
+                        }).catch(err => { setIsSubmitting(false); showToast(err.toString(), 'error'); });
+                    } else {
+                        setIsSubmitting(false); showToast("Demo Mode: Data Master Tersimpan!");
+                        if(adminForm.type === 'Company') setData(p => ({...p, companies: [...p.companies, adminForm.value]}));
+                        if(adminForm.type === 'Department') setData(p => ({...p, departments: [...p.departments, adminForm.value]}));
+                        setAdminForm({...adminForm, value:''});
+                    }
+                };
+
+                const handleSaveUser = (e) => {
+                    e.preventDefault(); setIsSubmitting(true);
+                    
+                    if (typeof google !== 'undefined' && google.script) {
+                        google.script.run.withSuccessHandler(r=>{
+                            setIsSubmitting(false); if(r.success){ showToast("User Dibuat!"); fetchData(true); setUserForm({username:'', password:'', name:'', role:'User', dept:'', comp:'', email:''}); } else showToast(r.error, 'error');
+                        }).saveUser(userForm);
+                    } else if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                        apiCall('saveUser', userForm).then(r=>{
+                            setIsSubmitting(false); if(r.success){ showToast("User Dibuat!"); fetchData(true); setUserForm({username:'', password:'', name:'', role:'User', dept:'', comp:'', email:''}); } else showToast(r.error, 'error');
+                        }).catch(err => { setIsSubmitting(false); showToast(err.toString(), 'error'); });
+                    } else {
+                        setIsSubmitting(false); showToast("Demo Mode: User Dibuat!");
+                        setData(p => ({...p, users: [...p.users, {id: 'U'+Date.now(), ...userForm}]}));
+                        setUserForm({username:'', password:'', name:'', role:'User', dept:'', comp:'', email:''});
+                    }
+                };
+
+                return (
+                    <div className="space-y-6 fade-in h-full flex gap-6">
+                        <div className="w-1/2 space-y-6 flex flex-col">
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                                <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Katalog Master Data</h3>
+                                <form onSubmit={handleSaveMaster} className="flex gap-4 items-end mb-6">
+                                    <div className="flex-1"><label className="block text-xs font-bold text-slate-500 mb-1">Tipe Data</label><select value={adminForm.type} onChange={e=>setAdminForm({...adminForm, type:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"><option value="Company">Company</option><option value="Department">Department</option></select></div>
+                                    <div className="flex-[2]"><label className="block text-xs font-bold text-slate-500 mb-1">Nilai Baru</label><input required type="text" value={adminForm.value} onChange={e=>setAdminForm({...adminForm, value:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"/></div>
+                                    <button type="submit" disabled={isSubmitting} className="bg-slate-800 text-white font-bold px-4 py-2 rounded">Add</button>
+                                </form>
+                                <div className="flex gap-4">
+                                    <div className="flex-1 bg-slate-50 rounded border border-slate-200 p-2 h-48 overflow-auto"><div className="text-[10px] font-bold text-slate-400 mb-2">COMPANIES</div>{(data.companies||[]).map((c,i) => <div key={i} className="text-xs text-slate-700 font-semibold mb-1">{c}</div>)}</div>
+                                    <div className="flex-[2] bg-slate-50 rounded border border-slate-200 p-2 h-48 overflow-auto"><div className="text-[10px] font-bold text-slate-400 mb-2">DEPARTMENTS</div>{(data.departments||[]).map((d,i) => <div key={i} className="text-xs text-slate-700 font-semibold mb-1">{d}</div>)}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="w-1/2 space-y-6 flex flex-col">
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex-1">
+                                <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">User Management</h3>
+                                <form onSubmit={handleSaveUser} className="space-y-3 mb-6">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div><input type="text" required placeholder="Name Lengkap" value={userForm.name} onChange={e=>setUserForm({...userForm, name:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"/></div>
+                                        <div><select required value={userForm.role} onChange={e=>setUserForm({...userForm, role:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"><option value="Admin">Admin</option><option value="User">User</option></select></div>
+                                        <div><input type="text" required placeholder="Username Baru" value={userForm.username} onChange={e=>setUserForm({...userForm, username:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"/></div>
+                                        <div><input type="password" required placeholder="Password" value={userForm.password} onChange={e=>setUserForm({...userForm, password:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"/></div>
+                                        <div className="col-span-2"><input type="email" placeholder="Email untuk Alert (Opsional)" value={userForm.email} onChange={e=>setUserForm({...userForm, email:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"/></div>
+                                        <div><select required value={userForm.comp} onChange={e=>setUserForm({...userForm, comp:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"><option value="">- Company Akses -</option><option value="All">All</option>{(data.companies||[]).map(c=><option key={c} value={c}>{c}</option>)}</select></div>
+                                        <div><select required value={userForm.dept} onChange={e=>setUserForm({...userForm, dept:e.target.value})} className="w-full border border-slate-300 rounded p-2 text-sm"><option value="">- Dept Akses -</option><option value="All Area HCGS">All Area HCGS</option>{(data.departments||[]).map(d=><option key={d} value={d}>{d}</option>)}</select></div>
+                                    </div>
+                                    <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white font-bold py-2 rounded shadow-sm hover:bg-blue-700">Buat User Baru</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
 
             return (
-                <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
-                    <Sidebar />
-                    <div className="flex-1 ml-64 flex flex-col h-screen">
-                        <TopHeader title={{dashboard:'Dashboard Analytics', detail:'Budget Detail', entry:`Usage Entry (FY${fy})`, planning:`Next Year Planning (FY${fy + 1})`, logs:'Audit Logs'}[activeTab]} subtitle="Enterprise Budget Management" />
-                        <main className="flex-1 overflow-y-auto">
-                            <div className="max-w-[1600px] mx-auto min-h-full">
-                                {activeTab === 'dashboard' && renderDashboard()} {activeTab === 'detail' && renderBudgetDetail()}
-                                {activeTab === 'entry' && renderUsageEntry()} {activeTab === 'planning' && renderPlanning()}
-                                {activeTab === 'logs' && renderLogs()}
+                <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
+                    {toast && (<div className={`fixed top-6 right-6 px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 text-white toast-enter ${toast.type==='success'?'bg-emerald-600':'bg-red-600'}`}><span className="font-bold text-sm">{toast.msg}</span></div>)}
+                    
+                    <div className="w-64 bg-gradient-to-b from-white to-blue-50 border-r border-slate-200 flex flex-col shrink-0 z-20 h-screen shadow-lg">
+                    <div className="p-6 flex flex-col items-center border-b border-slate-200 bg-white/50"><img src={data.logoUrl || "https://i.ibb.co.com/d4J7SpwB/logo-tranparant-BP-tulisan.png"} alt="BudgetPro" className="h-16 object-contain mb-3 drop-shadow-sm" /><span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200">Enterprise Edition</span></div>
+                    <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+                            {[
+                                { id: 'dashboard', label: 'Dashboard Analytics' },
+                                { id: 'budget', label: 'Budget Confirm' },
+                                { id: 'usage', label: 'Usage / Transactions' },
+                                { id: 'supplement', label: 'Supplementary Entry' },
+                                { id: 'planning', label: 'Next Year Submission' },
+                                { id: 'reports', label: 'Management Reports' }
+                            ].map(item => (
+                                <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full text-left px-4 py-3 rounded-xl transition-all text-sm font-semibold border ${activeTab === item.id ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'text-slate-600 border-transparent hover:bg-white'}`}>{item.label}</button>
+                            ))}
+                            {isAdmin && (
+                                <div className="mt-6 pt-4 border-t border-slate-200">
+                                    <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Admin Panel</p>
+                                    <button onClick={() => setActiveTab('admin')} className={`w-full text-left px-4 py-3 rounded-xl transition-all text-sm font-semibold border ${activeTab === 'admin' ? 'bg-slate-800 text-white border-slate-700 shadow-md' : 'text-slate-500 border-transparent hover:bg-slate-200'}`}>Master Data Settings</button>
+                                </div>
+                            )}
+                        </nav>
+                        <div className="p-4 border-t border-slate-200 bg-white flex items-center justify-between"><div className="flex items-center space-x-3"><div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">{user.name.charAt(0)}</div><div className="flex flex-col text-left max-w-[120px]"><span className="text-sm font-bold text-slate-800 truncate">{user.name}</span><span className="text-[10px] font-semibold text-slate-500 truncate">{user.role}</span></div></div><button onClick={() => {setUser(null);setLoginInput({user:'',pass:''});}} className="text-red-500 font-bold text-xl">🚪</button></div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+                        <header className="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center shrink-0 z-10 shadow-sm relative">
+                            <div>
+                                <h1 className="text-2xl font-bold text-slate-800 capitalize">{String(activeTab).replace('-', ' ')}</h1>
+                                <div className="flex items-center space-x-3 mt-2 text-sm">
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tahun:</span><select value={activeYear} onChange={(e)=>setActiveYear(e.target.value)} className="bg-blue-50 text-blue-700 border border-blue-200 font-bold text-sm px-2 py-1 rounded-md outline-none"><option value="2026">FY 2026</option></select>
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider ml-2">Comp:</span>
+                                    <select value={activeCompany} onChange={(e)=>setActiveCompany(e.target.value)} disabled={isCompLocked} className={`bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm px-2 py-1 rounded-md max-w-[120px] truncate outline-none ${isCompLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        <option value="All">All Entities</option>
+                                        {data.companies.map(c=><option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider ml-2">Dept:</span>
+                                    <select value={subDept} onChange={(e)=>setSubDept(e.target.value)} disabled={isUserLocked} className={`bg-slate-50 border border-slate-200 text-slate-700 font-bold text-sm px-2 py-1 rounded-md max-w-xs truncate outline-none ${isUserLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        <option value="All Area HCGS">All Area HCGS</option>
+                                        {data.departments.map(d=><option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                {isSyncing && (
+                                    <div className="text-xs font-bold text-blue-600 flex items-center bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
+                                        <svg className="animate-spin -ml-1 mr-2 h-3.5 w-3.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Syncing...
+                                    </div>
+                                )}
+                                <div className="flex bg-slate-100 p-1.5 rounded-lg border border-slate-200 shadow-inner">
+                                    <button onClick={()=>setCurrency('IDR')} className={`px-5 py-1.5 text-xs font-bold rounded-md ${currency==='IDR'?'bg-white text-blue-700 shadow-sm':'text-slate-500'}`}>IDR</button>
+                                    <button onClick={()=>setCurrency('USD')} className={`px-5 py-1.5 text-xs font-bold rounded-md ${currency==='USD'?'bg-white text-blue-700 shadow-sm':'text-slate-500'}`}>USD</button>
+                                </div>
+                            </div>
+                        </header>
+                        
+                        <main className="flex-1 overflow-y-auto p-8 w-full bg-slate-50">
+                            <div className="w-full h-full max-w-[1600px] mx-auto">
+                                <ContentErrorBoundary activeTab={activeTab}>
+                                    {activeTab === 'dashboard' && renderDashboard()}
+                                    {activeTab === 'budget' && renderBudgetTable()}
+                                    {activeTab === 'usage' && renderUsageTable()}
+                                    {activeTab === 'supplement' && renderSupplementary()}
+                                    {activeTab === 'planning' && renderPlanning()}
+                                    {activeTab === 'reports' && renderReports()}
+                                    {activeTab === 'admin' && renderAdmin()}
+                                </ContentErrorBoundary>
                             </div>
                         </main>
                     </div>
-                    <LoginModal />
                 </div>
             );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root')); root.render(<App />);
     </script>
 </body>
 </html>
